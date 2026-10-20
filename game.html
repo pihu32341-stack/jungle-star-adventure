@@ -1,0 +1,415 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Jungle Star Adventure Ultimate</title>
+<style>
+:root{--bg:#07152f;--panel:#10284b;--gold:#ffcf38;--blue:#39c8ff;--pink:#ff62c7}
+*{box-sizing:border-box}
+body{margin:0;background:linear-gradient(140deg,#07152f,#173e68,#281452);color:white;font-family:system-ui,Arial,sans-serif;min-height:100vh}
+button{border:0;cursor:pointer;color:white;font-weight:800;border-radius:13px;padding:11px 15px;background:linear-gradient(135deg,#286cff,#792dff);box-shadow:0 4px 0 #151b65;transition:.15s}
+button:active{transform:translateY(3px);box-shadow:none}
+button:disabled{opacity:.45;cursor:not-allowed}
+header{text-align:center;padding:17px 10px 8px}
+h1{margin:0;font-size:clamp(26px,5vw,48px);color:#ffdf4d;text-shadow:0 4px #b34c0d,0 0 25px #ff9d28}
+header p{margin:5px;color:#b9eaff}
+.wrap{max-width:1100px;margin:auto;padding:10px}
+.panel{background:linear-gradient(145deg,#10284bee,#09172fee);border:1px solid #386bb3;border-radius:18px;padding:14px;margin-bottom:12px;box-shadow:0 10px 30px #0004}
+.topstats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.stat{background:#07152f;border-radius:12px;padding:9px;text-align:center;border:1px solid #34578a}
+.stat b{display:block;font-size:21px;color:var(--gold)}
+.stat span{font-size:12px;color:#c8dfff}
+.gamebox{position:relative;overflow:hidden;border-radius:15px;border:2px solid #46d7ff;background:#62d7ff}
+canvas{display:block;width:100%;height:auto;aspect-ratio:900/430;touch-action:none}
+.hud{position:absolute;top:9px;left:9px;right:9px;display:flex;gap:6px;flex-wrap:wrap;justify-content:space-between;pointer-events:none}
+.hud span{background:#07152fce;padding:6px 10px;border-radius:9px;font-weight:800;font-size:13px}
+.overlay{position:absolute;inset:0;background:#06132dcc;display:flex;align-items:center;justify-content:center;text-align:center;padding:18px}
+.overlay.hidden{display:none}
+.modal{max-width:390px;width:100%;background:linear-gradient(145deg,#153e69,#24144f);border:2px solid #ffe05a;border-radius:22px;padding:22px;box-shadow:0 0 40px #0008}
+.modal h2{color:#ffdf4d;font-size:29px;margin:0 0 8px}
+.modal p{line-height:1.5}
+.btns{display:flex;justify-content:center;flex-wrap:wrap;gap:9px;margin-top:13px}
+.green{background:linear-gradient(135deg,#00c878,#078c58)}
+.orange{background:linear-gradient(135deg,#ff9e24,#ef4c29)}
+.pink{background:linear-gradient(135deg,#f04fa9,#8c36ed)}
+h2.section{font-size:20px;margin:0 0 12px;color:#80eaff}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:10px}
+.card{border:1px solid #385c95;border-radius:14px;padding:12px;text-align:center;background:#0b1c39}
+.card .emoji{font-size:38px}
+.card h3{font-size:15px;margin:5px 0}
+.card p{font-size:12px;color:#c0d5f6;min-height:30px;margin:5px 0}
+.card button{width:100%;padding:9px 5px;font-size:12px}
+.selected{border:2px solid #ffdb45;box-shadow:0 0 15px #ffc83d45}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px}
+.progress{height:10px;background:#263a5c;border-radius:99px;overflow:hidden;margin:7px 0}
+.progress div{height:100%;width:0;background:linear-gradient(90deg,#00e8a2,#ffdf3d)}
+.controls{display:flex;justify-content:center;gap:14px;margin-top:12px}
+.controls button{width:72px;height:58px;font-size:25px;touch-action:none}
+footer{text-align:center;padding:16px;color:#a7c6ed;font-size:12px}
+.small{font-size:12px;color:#b8d3f3}
+#notice{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#142e52;border:1px solid #ffdb45;padding:12px 18px;border-radius:12px;display:none;z-index:10;box-shadow:0 5px 25px #0009;text-align:center;max-width:90vw}
+@media(max-width:520px){.panel{padding:10px}.topstats{grid-template-columns:repeat(2,1fr)}.controls button{width:65px}.hud span{font-size:11px;padding:5px 7px}}
+</style>
+</head>
+<body>
+<header>
+<h1>🌟 JUNGLE STAR ADVENTURE</h1>
+<p>Run • Jump • Collect • Explore • Become a Champion!</p>
+</header>
+<main class="wrap">
+<section class="panel topstats">
+<div class="stat"><b id="coins">0</b><span>🪙 Coins</span></div>
+<div class="stat"><b id="best">0</b><span>🏆 Best Score</span></div>
+<div class="stat"><b id="worldLabel">🌳 Forest</b><span>🌍 World</span></div>
+<div class="stat"><b id="charLabel">🐵 Monkey</b><span>🦸 Hero</span></div>
+</section>
+
+<section class="panel">
+<div class="gamebox">
+<canvas id="game" width="900" height="430" aria-label="Jungle Star Adventure game"></canvas>
+<div class="hud">
+<span id="hudScore">⭐ 0</span><span id="hudLives">❤️ 3</span>
+<span id="hudLevel">LEVEL 1</span><span id="hudPower">⚡ Ready</span>
+</div>
+<div class="overlay" id="overlay">
+<div class="modal">
+<h2 id="modalTitle">🌴 Jungle Adventure!</h2>
+<p id="modalText">Run through magical worlds, collect stars and coins, avoid obstacles, and unlock new heroes!</p>
+<div class="btns">
+<button class="green" id="startBtn">▶ PLAY NOW</button>
+<button id="soundBtn">🔊 Sound ON</button>
+</div>
+<p class="small">Desktop: ← → move, Space/↑ jump, X power-up, P pause.</p>
+</div>
+</div>
+</div>
+<div class="controls">
+<button id="leftBtn" aria-label="Move left">⬅️</button>
+<button id="jumpBtn" class="green" aria-label="Jump">⬆️</button>
+<button id="powerBtn" class="orange" aria-label="Use power-up">⚡</button>
+<button id="rightBtn" aria-label="Move right">➡️</button>
+</div>
+<p class="small">Mobile: use the buttons above. Collect ⭐ stars and 🪙 coins. Avoid logs and monsters!</p>
+<div class="btns">
+<button id="pauseBtn">⏸ Pause</button>
+<button id="restartBtn" class="orange">↻ Restart</button>
+<button id="menuBtn">🏠 Main Menu</button>
+</div>
+</section>
+
+<div class="grid2">
+<section class="panel">
+<h2 class="section">🌎 Choose Your World</h2>
+<div class="cards" id="worldCards"></div>
+</section>
+<section class="panel">
+<h2 class="section">🦸 Choose Your Hero</h2>
+<div class="cards" id="heroCards"></div>
+</section>
+</div>
+
+<div class="grid2">
+<section class="panel">
+<h2 class="section">🛍️ Adventure Shop</h2>
+<p class="small">Spend your collected coins on upgrades and power-ups.</p>
+<div class="cards" id="shopCards"></div>
+</section>
+<section class="panel">
+<h2 class="section">⚡ Power-ups</h2>
+<div class="cards" id="powerCards"></div>
+</section>
+</div>
+
+<div class="grid2">
+<section class="panel">
+<h2 class="section">🏆 High Scores</h2>
+<div id="leaderboard"></div>
+<div class="btns"><button id="clearScores" class="orange">Reset Scores</button></div>
+</section>
+<section class="panel">
+<h2 class="section">⚙️ Settings & Progress</h2>
+<label><input id="musicToggle" type="checkbox" checked> 🔊 Sound effects</label><br><br>
+<label>🎮 Difficulty
+<select id="difficulty" style="padding:8px;border-radius:8px">
+<option value="easy">Easy</option><option value="normal" selected>Normal</option><option value="hard">Hard</option>
+</select></label>
+<div style="margin-top:14px">⭐ Total stars collected: <b id="totalStars">0</b></div>
+<div class="progress"><div id="progressBar"></div></div>
+<p class="small" id="progressText">Play to unlock new rewards!</p>
+<div class="btns"><button id="resetAll" class="orange">Reset All Progress</button></div>
+</section>
+</div>
+</main>
+<footer>🌟 Jungle Star Adventure Ultimate • Made for fun, built for little adventurers 💚</footer>
+<div id="notice"></div>
+
+<script>
+(() => {
+"use strict";
+const $ = id => document.getElementById(id);
+const canvas = $("game"), ctx = canvas.getContext("2d");
+const W=900,H=430, ground=355;
+const worlds=[
+ {name:"Green Forest",emoji:"🌳",cost:0,sky:"#63d7ff",far:"#36b8a2",ground:"#25834d",desc:"A sunny jungle adventure."},
+ {name:"Desert Land",emoji:"🏜️",cost:100,sky:"#ffcc82",far:"#dc9653",ground:"#c27a34",desc:"Golden dunes and surprises."},
+ {name:"Snow Mountain",emoji:"❄️",cost:200,sky:"#a6e7ff",far:"#8cbfe7",ground:"#d9f4ff",desc:"Icy hills and slippery paths."},
+ {name:"Lava World",emoji:"🌋",cost:350,sky:"#39214e",far:"#7d3448",ground:"#a33b29",desc:"A fiery test for brave heroes."},
+ {name:"Candy Kingdom",emoji:"🍭",cost:500,sky:"#ffc6ef",far:"#b9a2ff",ground:"#5bbd93",desc:"A colorful magical world."}
+];
+const heroes=[
+ {name:"Monkey",emoji:"🐵",cost:0,desc:"A speedy jungle explorer."},
+ {name:"Panda",emoji:"🐼",cost:100,desc:"A calm and clever hero."},
+ {name:"Fox",emoji:"🦊",cost:150,desc:"Quick on every trail."},
+ {name:"Rabbit",emoji:"🐰",cost:200,desc:"A champion jumper."},
+ {name:"Tiger",emoji:"🐯",cost:250,desc:"Fearless and powerful."},
+ {name:"Dragon",emoji:"🐲",cost:450,desc:"A legendary adventurer."}
+];
+const shop=[
+ {name:"Coin Magnet",emoji:"🧲",cost:80,desc:"Attract coins for 20 seconds.",type:"magnet"},
+ {name:"Super Shield",emoji:"🛡️",cost:100,desc:"Block one obstacle hit.",type:"shield"},
+ {name:"Speed Boost",emoji:"⚡",cost:80,desc:"Run faster for 10 seconds.",type:"speed"},
+ {name:"Extra Heart",emoji:"❤️",cost:120,desc:"Start with an extra life.",type:"heart"},
+ {name:"Star Bonus",emoji:"🌟",cost:100,desc:"Start each run with 5 stars.",type:"star"}
+];
+const powers=[
+ {name:"Magnet",emoji:"🧲",type:"magnet",desc:"Pull nearby coins to you."},
+ {name:"Shield",emoji:"🛡️",type:"shield",desc:"Protect yourself from a hit."},
+ {name:"Speed",emoji:"⚡",type:"speed",desc:"Sprint through the jungle."}
+];
+const defaults={coins:0,best:0,totalStars:0,world:0,hero:0,unlockedWorlds:[0],unlockedHeroes:[0],inventory:{magnet:0,shield:0,speed:0,heart:0,star:0},scores:[],sound:true,difficulty:"normal"};
+let data;
+try { data=Object.assign({},defaults,JSON.parse(localStorage.getItem("jungleUltimateSave")||"{}")); }
+catch(e){data={...defaults};}
+data.inventory=Object.assign({},defaults.inventory,data.inventory||{});
+data.unlockedWorlds=data.unlockedWorlds||[0];data.unlockedHeroes=data.unlockedHeroes||[0];data.scores=data.scores||[];
+let running=false,paused=false,started=false,score=0,stars=0,lives=3,level=1;
+let player={x:130,y:ground-48,w:43,h:48,vy:0,onGround:true,invuln:0};
+let objects=[],particles=[],frame=0,spawnClock=0,worldTime=0;
+let powerTimers={magnet:0,speed:0,shield:0};
+let audioCtx=null,lastTime=0,toastTimer;
+const rand=(a,b)=>Math.random()*(b-a)+a;
+const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
+function save(){try{localStorage.setItem("jungleUltimateSave",JSON.stringify(data));}catch(e){}}
+function notice(s){$("notice").textContent=s;$("notice").style.display="block";clearTimeout(toastTimer);toastTimer=setTimeout(()=>$("notice").style.display="none",2200);}
+function sound(freq=600,duration=.08){
+ if(!data.sound)return;
+ try{audioCtx=audioCtx||new(window.AudioContext||window.webkitAudioContext)();const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.frequency.value=freq;o.type="sine";g.gain.value=.055;o.start();g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+duration);o.stop(audioCtx.currentTime+duration);}catch(e){}
+}
+function renderWorlds(){
+ $("worldCards").innerHTML=worlds.map((w,i)=>{
+ let unlocked=data.unlockedWorlds.includes(i);
+ return `<div class="card ${data.world===i?"selected":""}"><div class="emoji">${w.emoji}</div><h3>${w.name}</h3><p>${w.desc}</p><button ${!unlocked?"":""} data-world="${i}" class="${unlocked?"green":"orange"}">${data.world===i?"✓ Selected":unlocked?"Play World":"🔒 "+w.cost+" coins"}</button></div>`;
+ }).join("");
+ $("worldCards").querySelectorAll("[data-world]").forEach(b=>b.onclick=()=>{
+ let i=+b.dataset.world,w=worlds[i];
+ if(!data.unlockedWorlds.includes(i)){
+  if(data.coins<w.cost)return notice("Need "+w.cost+" coins to unlock this world!");
+  data.coins-=w.cost;data.unlockedWorlds.push(i);notice(w.name+" unlocked!");
+ }
+ data.world=i;save();renderAll();resetRun(false);
+ });
+}
+function renderHeroes(){
+ $("heroCards").innerHTML=heroes.map((h,i)=>{
+ let ok=data.unlockedHeroes.includes(i);
+ return `<div class="card ${data.hero===i?"selected":""}"><div class="emoji">${h.emoji}</div><h3>${h.name}</h3><p>${h.desc}</p><button data-hero="${i}" class="${ok?"green":"orange"}">${data.hero===i?"✓ Selected":ok?"Choose":"🔒 "+h.cost+" coins"}</button></div>`;
+ }).join("");
+ $("heroCards").querySelectorAll("[data-hero]").forEach(b=>b.onclick=()=>{
+ let i=+b.dataset.hero,h=heroes[i];
+ if(!data.unlockedHeroes.includes(i)){
+  if(data.coins<h.cost)return notice("You need "+h.cost+" coins!");
+  data.coins-=h.cost;data.unlockedHeroes.push(i);notice(h.name+" unlocked!");
+ }
+ data.hero=i;save();renderAll();sound(700);
+ });
+}
+function renderShop(){
+ $("shopCards").innerHTML=shop.map((s,i)=>`<div class="card"><div class="emoji">${s.emoji}</div><h3>${s.name}</h3><p>${s.desc}</p><button data-shop="${i}">Buy 🪙 ${s.cost}</button></div>`).join("");
+ $("shopCards").querySelectorAll("[data-shop]").forEach(b=>b.onclick=()=>{
+ let s=shop[+b.dataset.shop];if(data.coins<s.cost)return notice("Not enough coins!");
+ data.coins-=s.cost;data.inventory[s.type]=(data.inventory[s.type]||0)+1;save();renderAll();notice(s.name+" added to inventory!");sound(850);
+ });
+ $("powerCards").innerHTML=powers.map(p=>`<div class="card"><div class="emoji">${p.emoji}</div><h3>${p.name}</h3><p>${p.desc}</p><button data-power="${p.type}">Use (${data.inventory[p.type]||0})</button></div>`).join("");
+ $("powerCards").querySelectorAll("[data-power]").forEach(b=>b.onclick=()=>activatePower(b.dataset.power));
+}
+function renderScores(){
+ let sorted=[...data.scores].sort((a,b)=>b.score-a.score).slice(0,10);
+ $("leaderboard").innerHTML=sorted.length?sorted.map((s,i)=>`<div style="display:flex;justify-content:space-between;padding:8px;border-bottom:1px solid #29436a"><span>${["🥇","🥈","🥉"][i]||"🏅"} ${escapeHTML(s.name)}</span><b>${s.score}</b></div>`).join(""):"<p class='small'>Your best runs will appear here!</p>";
+}
+function escapeHTML(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+function renderAll(){
+ $("coins").textContent=data.coins;$("best").textContent=data.best;
+ $("worldLabel").textContent=worlds[data.world].emoji+" "+worlds[data.world].name;
+ $("charLabel").textContent=heroes[data.hero].emoji+" "+heroes[data.hero].name;
+ $("totalStars").textContent=data.totalStars;
+ $("musicToggle").checked=data.sound;$("difficulty").value=data.difficulty;
+ $("progressBar").style.width=Math.min(100,data.totalStars/5)+"%";
+ $("progressText").textContent=data.totalStars+" total stars • "+data.unlockedHeroes.length+"/"+heroes.length+" heroes • "+data.unlockedWorlds.length+"/"+worlds.length+" worlds unlocked";
+ renderWorlds();renderHeroes();renderShop();renderScores();updateHUD();
+}
+function updateHUD(){
+ $("hudScore").textContent="⭐ "+score+" · 🪙 "+(runCoins||0);
+ $("hudLives").textContent="❤️ "+lives;$("hudLevel").textContent="LEVEL "+level;
+ let active=Object.keys(powerTimers).filter(k=>powerTimers[k]>0);
+ $("hudPower").textContent=active.length?"⚡ "+active.join(", "):"⚡ Ready";
+}
+let runCoins=0;
+function resetRun(show=true){
+ running=false;paused=false;score=0;stars=0;runCoins=0;level=1;frame=0;spawnClock=0;worldTime=0;
+ lives=3+(data.inventory.heart>0?1:0);
+ if(data.inventory.heart>0)data.inventory.heart--;
+ if(data.inventory.star>0){score+=5;stars+=5;data.inventory.star--;}
+ player={x:130,y:ground-48,w:43,h:48,vy:0,onGround:true,invuln:0};
+ objects=[];particles=[];powerTimers={magnet:0,speed:0,shield:0};
+ if(show){$("overlay").classList.remove("hidden");$("modalTitle").textContent="🌴 Ready, "+heroes[data.hero].name+"?";$("modalText").textContent="World: "+worlds[data.world].name+". Collect stars and coins, jump over obstacles, and set a new high score!";$("startBtn").textContent="▶ PLAY NOW";}
+ renderAll();draw();
+}
+function startGame(){if(!started){started=true;}running=true;paused=false;$("overlay").classList.add("hidden");lastTime=performance.now();sound(650);requestAnimationFrame(loop);}
+function endGame(){
+ running=false;paused=false;
+ if(score>data.best)data.best=score;
+ if(score>0){data.scores.push({name:heroes[data.hero].name,score,world:worlds[data.world].name,date:Date.now()});data.scores=data.scores.sort((a,b)=>b.score-a.score).slice(0,30);}
+ data.coins+=runCoins;data.totalStars+=stars;
+ save();renderAll();
+ $("overlay").classList.remove("hidden");$("modalTitle").textContent=lives<=0?"🏆 Great Adventure!":"⏸ Game Paused";
+ $("modalText").innerHTML=`Score: <b>${score}</b> ⭐<br>Coins earned: <b>${runCoins}</b> 🪙<br>Stars collected: <b>${stars}</b> 🌟<br>Level reached: <b>${level}</b>`;
+ $("startBtn").textContent="🔄 PLAY AGAIN";sound(lives<=0?330:700,.2);
+}
+function jump(){if(!running||paused)return;if(player.onGround){player.vy=-630;player.onGround=false;sound(480);}}
+function activatePower(type){
+ if(type==="shield"&&powerTimers.shield>0)return notice("Shield already active!");
+ if(type==="magnet"&&powerTimers.magnet>0)return notice("Magnet already active!");
+ if(type==="speed"&&powerTimers.speed>0)return notice("Speed boost already active!");
+ if((data.inventory[type]||0)<=0)return notice("Visit the shop to get "+type+"!");
+ data.inventory[type]--;powerTimers[type]=type==="speed"?600:type==="magnet"?1200:900;
+ save();renderAll();sound(900);notice(type.toUpperCase()+" activated!");
+}
+function usePower(){
+ for(let t of ["shield","magnet","speed"]){if(data.inventory[t]>0){activatePower(t);return;}}
+ notice("Buy a power-up in the shop first!");
+}
+function spawn(){
+ let r=Math.random();
+ if(r<.44)objects.push({type:"star",x:W+20,y:rand(170,300),r:14,emoji:"⭐"});
+ else if(r<.69)objects.push({type:"coin",x:W+20,y:rand(210,320),r:13,emoji:"🪙"});
+ else if(r<.84)objects.push({type:"obstacle",x:W+20,y:ground-30,w:35,h:30,emoji:"🪵"});
+ else objects.push({type:"monster",x:W+20,y:ground-39,w:38,h:39,emoji:["🐗","🦀","🐸"][Math.floor(Math.random()*3)]});
+}
+const keys={left:false,right:false};
+function collide(a,b){return a.x<b.x+(b.w||b.r*2)&&a.x+a.w>b.x&&(a.y<b.y+(b.h||b.r*2)&&a.y+a.h>b.y);}
+function burst(x,y,emoji){for(let i=0;i<8;i++)particles.push({x,y,vx:rand(-100,100),vy:rand(-180,-20),life:1,emoji});}
+function loop(now){
+ if(!running)return;
+ if(paused){requestAnimationFrame(loop);return;}
+ let dt=Math.min((now-lastTime)/1000,.035);lastTime=now;
+ update(dt);draw();requestAnimationFrame(loop);
+}
+function update(dt){
+ frame++;worldTime+=dt;spawnClock+=dt;
+ let diff=data.difficulty==="easy"?.8:data.difficulty==="hard"?1.4:1;
+ let speed=(270+level*14)*diff*(powerTimers.speed>0?1.6:1);
+ if(keys.left)player.x-=260*dt;if(keys.right)player.x+=260*dt;
+ player.x=clamp(player.x,5,W-player.w-5);
+ player.vy+=1500*dt;player.y+=player.vy*dt;
+ if(player.y+player.h>=ground){player.y=ground-player.h;player.vy=0;player.onGround=true;}
+ if(player.invuln>0)player.invuln--;
+ Object.keys(powerTimers).forEach(k=>{if(powerTimers[k]>0)powerTimers[k]--;});
+ if(spawnClock>Math.max(.48,1.12-level*.045)){spawnClock=0;spawn();}
+ for(let i=objects.length-1;i>=0;i--){
+  let o=objects[i];o.x-=speed*dt;
+  if(powerTimers.magnet>0&&o.type==="coin"&&Math.abs(o.x-player.x)<210){o.y+=(player.y-o.y)*dt*4;}
+  let box={x:o.x-o.r||o.x,y:o.y-o.r||o.y,w:o.w||o.r*2,h:o.h||o.r*2};
+  if(collide(player,box)){
+   if(o.type==="star"){score+=10;stars++;burst(o.x,o.y,"✨");sound(850);}
+   else if(o.type==="coin"){runCoins+=1;score+=3;burst(o.x,o.y,"💛");sound(1050);}
+   else if(player.invuln===0){
+    if(powerTimers.shield>0){powerTimers.shield=0;burst(o.x,o.y,"🛡️");sound(500);}
+    else{lives--;player.invuln=90;burst(player.x,player.y,"💥");sound(170,.2);}
+   }
+   if(o.type==="star"||o.type==="coin"||player.invuln===90||powerTimers.shield===0)objects.splice(i,1);
+   else if(o.type==="obstacle"||o.type==="monster")objects.splice(i,1);
+  }else if(o.x<-80)objects.splice(i,1);
+ }
+ for(let i=particles.length-1;i>=0;i--){let p=particles[i];p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=350*dt;p.life-=dt;if(p.life<=0)particles.splice(i,1);}
+ level=Math.floor(score/100)+1;
+ if(lives<=0){endGame();return;}
+ updateHUD();
+}
+function draw(){
+ let w=worlds[data.world];ctx.clearRect(0,0,W,H);
+ let sky=ctx.createLinearGradient(0,0,0,H);sky.addColorStop(0,w.sky);sky.addColorStop(1,"#e5f8ff");ctx.fillStyle=sky;ctx.fillRect(0,0,W,H);
+ // sun, clouds and distant hills
+ ctx.fillStyle="#fff6a0";ctx.beginPath();ctx.arc(760,70,34,0,Math.PI*2);ctx.fill();
+ ctx.fillStyle=w.far;
+ for(let i=0;i<7;i++){let x=((i*175-frame*.22)%1200+1200)%1200-100;ctx.beginPath();ctx.ellipse(x,250,125,100,0,Math.PI,Math.PI*2);ctx.fill();}
+ for(let i=0;i<7;i++){
+  let x=((i*180-frame*.55)%1100+1100)%1100-80;
+  ctx.fillStyle=w.ground;ctx.fillRect(x,270,18,95);
+  ctx.fillStyle=data.world===1?"#d9943e":data.world===2?"#e6fbff":data.world===3?"#eb5737":data.world===4?"#ff72cf":"#147c48";
+  ctx.beginPath();ctx.arc(x+8,265,45,0,Math.PI*2);ctx.fill();
+ }
+ ctx.fillStyle=w.ground;ctx.fillRect(0,ground,W,H-ground);
+ ctx.fillStyle="#ffffff33";for(let i=0;i<25;i++){let x=(i*47-frame*1.3)%W;if(x<0)x+=W;ctx.fillRect(x,ground+14,20,3);}
+ // little floating islands/landmarks
+ ctx.fillStyle="#ffffff55";for(let i=0;i<5;i++){let x=(i*230-frame*.7)%W;if(x<0)x+=W;ctx.beginPath();ctx.arc(x,120+(i%2)*40,3,0,Math.PI*2);ctx.fill();}
+ // objects
+ for(const o of objects){ctx.font=(o.type==="star"?30:29)+"px serif";ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText(o.emoji,o.x,o.y);}
+ // player shadow
+ ctx.fillStyle="#123a3544";ctx.beginPath();ctx.ellipse(player.x+player.w/2,ground+2,27,6,0,0,Math.PI*2);ctx.fill();
+ if(player.invuln===0||Math.floor(player.invuln/6)%2===0){
+  ctx.font="43px serif";ctx.textAlign="center";ctx.textBaseline="middle";
+  ctx.fillText(heroes[data.hero].emoji,player.x+player.w/2,player.y+player.h/2);
+ }
+ if(powerTimers.shield>0){ctx.strokeStyle="#72eaff";ctx.lineWidth=4;ctx.beginPath();ctx.arc(player.x+22,player.y+23,31,0,Math.PI*2);ctx.stroke();}
+ for(const p of particles){ctx.globalAlpha=Math.max(0,p.life);ctx.font="18px serif";ctx.fillText(p.emoji,p.x,p.y);}ctx.globalAlpha=1;
+ // subtle ground details
+ ctx.fillStyle="#ffffff35";ctx.fillRect(0,ground,W,4);
+}
+function bindHold(id,key){
+ const el=$(id);
+ const down=e=>{e.preventDefault();keys[key]=true;};
+ const up=e=>{e.preventDefault();keys[key]=false;};
+ el.addEventListener("pointerdown",down);el.addEventListener("pointerup",up);
+ el.addEventListener("pointerleave",up);el.addEventListener("pointercancel",up);
+}
+bindHold("leftBtn","left");bindHold("rightBtn","right");
+$("jumpBtn").addEventListener("pointerdown",e=>{e.preventDefault();jump();});
+$("powerBtn").addEventListener("pointerdown",e=>{e.preventDefault();usePower();});
+window.addEventListener("keydown",e=>{
+ if(["ArrowLeft","ArrowRight","ArrowUp"," "].includes(e.key))e.preventDefault();
+ if(e.key==="ArrowLeft"||e.key.toLowerCase()==="a")keys.left=true;
+ if(e.key==="ArrowRight"||e.key.toLowerCase()==="d")keys.right=true;
+ if(e.key==="ArrowUp"||e.key===" ")jump();
+ if(e.key.toLowerCase()==="x")usePower();
+ if(e.key.toLowerCase()==="p")togglePause();
+});
+window.addEventListener("keyup",e=>{
+ if(e.key==="ArrowLeft"||e.key.toLowerCase()==="a")keys.left=false;
+ if(e.key==="ArrowRight"||e.key.toLowerCase()==="d")keys.right=false;
+});
+function togglePause(){
+ if(!started||!running)return;
+ paused=!paused;
+ if(paused){running=false;$("overlay").classList.remove("hidden");$("modalTitle").textContent="⏸ Game Paused";$("modalText").textContent="Take a little break, adventurer!";$("startBtn").textContent="▶ RESUME";}
+ else{startGame();}
+}
+$("startBtn").onclick=()=>{if(started&&paused&&score>=0){startGame();}else startGame();};
+$("pauseBtn").onclick=()=>{
+ if(running){running=false;paused=true;$("overlay").classList.remove("hidden");$("modalTitle").textContent="⏸ Paused";$("modalText").textContent="Ready when you are!";$("startBtn").textContent="▶ RESUME";}
+ else if(paused)startGame();else notice("Press PLAY NOW to start!");
+};
+$("restartBtn").onclick=()=>{resetRun(false);startGame();};
+$("menuBtn").onclick=()=>{running=false;paused=false;started=false;resetRun(true);};
+$("soundBtn").onclick=()=>{data.sound=!data.sound;save();renderAll();$("soundBtn").textContent=data.sound?"🔊 Sound ON":"🔇 Sound OFF";};
+$("musicToggle").onchange=e=>{data.sound=e.target.checked;save();renderAll();};
+$("difficulty").onchange=e=>{data.difficulty=e.target.value;save();notice("Difficulty set to "+data.difficulty);};
+$("clearScores").onclick=()=>{if(confirm("Reset all leaderboard scores?")){data.scores=[];save();renderScores();}};
+$("resetAll").onclick=()=>{if(confirm("Reset all coins, heroes, worlds and scores? This cannot be undone.")){localStorage.removeItem("jungleUltimateSave");location.reload();}};
+window.addEventListener("blur",()=>{keys.left=false;keys.right=false;});
+renderAll();resetRun(true);
+})();
+</script>
+</body>
+</html>
